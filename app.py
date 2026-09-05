@@ -1,8 +1,42 @@
-
 import streamlit as st
 
 from tools import extract_text_from_pdf, clean_resume_text
 from graph import graph
+
+
+# --------------------------------------------------
+# Helper functions
+# --------------------------------------------------
+
+def render_bullets(items):
+    """Display a list as clean bullet points."""
+    
+    if not items:
+        st.write("None identified.")
+        return
+
+    for item in items:
+        st.markdown(f"- {item}")
+
+
+def render_numbered_items(items):
+    """Display a list as numbered items."""
+    
+    if not items:
+        st.write("None identified.")
+        return
+
+    for index, item in enumerate(items, start=1):
+        st.markdown(f"**{index}.** {item}")
+
+
+def render_text(text):
+    """Display text only when it exists."""
+    
+    if text:
+        st.write(text)
+    else:
+        st.write("No information available.")
 
 
 # --------------------------------------------------
@@ -66,9 +100,11 @@ analyze_button = st.button(
 if analyze_button:
 
     if uploaded_resume is None:
+
         st.error("Please upload a resume PDF.")
 
     elif not job_description.strip():
+
         st.error("Please paste a job description.")
 
     else:
@@ -128,13 +164,66 @@ if analyze_button:
             st.success("Resume analysis complete!")
 
 
-            # ==========================================
+            # ==================================================
+            # Extract results
+            # ==================================================
+
+            skills = result.get("skills_analysis", {})
+            experience = result.get("experience_analysis", {})
+            education = result.get("education_analysis", {})
+            job_match = result.get("job_match_analysis", {})
+            recommendations = result.get("recommendations", {})
+
+
+            # ==================================================
+            # Overview
+            # ==================================================
+
+            st.header("📊 Analysis Overview")
+
+            score = job_match.get("match_score", 0)
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+
+                st.metric(
+                    "Job Match Score",
+                    f"{score}/100"
+                )
+
+            with col2:
+
+                technical_count = len(
+                    skills.get("technical_skills", [])
+                )
+
+                st.metric(
+                    "Technical Skills",
+                    technical_count
+                )
+
+            with col3:
+
+                gap_count = len(
+                    job_match.get("missing_skills", [])
+                )
+
+                st.metric(
+                    "Missing Skills",
+                    gap_count
+                )
+
+            st.progress(score / 100)
+
+            st.divider()
+
+
+            # ==================================================
             # Skills Analysis
-            # ==========================================
+            # ==================================================
 
             st.header("🧠 Skills Analysis")
-
-            skills = result["skills_analysis"]
 
             col1, col2 = st.columns(2)
 
@@ -142,83 +231,102 @@ if analyze_button:
 
                 st.subheader("Technical Skills")
 
-                st.write(
+                render_bullets(
                     skills.get("technical_skills", [])
                 )
 
+
                 st.subheader("Soft Skills")
 
-                st.write(
+                render_bullets(
                     skills.get("soft_skills", [])
                 )
+
 
             with col2:
 
                 st.subheader("Tools & Technologies")
 
-                st.write(
+                render_bullets(
                     skills.get("tools_and_technologies", [])
                 )
 
+
                 st.subheader("Skill Gaps")
 
-                st.write(
+                render_bullets(
                     skills.get("skill_gaps", [])
                 )
 
 
-            # ==========================================
+            st.divider()
+
+
+            # ==================================================
             # Experience Analysis
-            # ==========================================
+            # ==================================================
 
             st.header("💼 Experience Analysis")
 
-            experience = result["experience_analysis"]
-
-            st.subheader("Roles")
-
-            st.write(
-                experience.get("roles", [])
-            )
-
-            st.subheader("Relevant Experience")
-
-            st.write(
-                experience.get("relevant_experience", [])
-            )
-
-            st.subheader("Achievements")
-
-            st.write(
-                experience.get("achievements", [])
-            )
-
-            st.subheader("Strengths")
-
-            st.write(
-                experience.get("strengths", [])
-            )
-
-            st.subheader("Weaknesses")
-
-            st.write(
-                experience.get("weaknesses", [])
-            )
-
             st.subheader("Seniority Assessment")
 
-            st.write(
-                experience.get("seniority_assessment", "")
+            render_text(
+                experience.get(
+                    "seniority_assessment",
+                    ""
+                )
             )
 
 
-            # ==========================================
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader("Roles")
+
+                render_bullets(
+                    experience.get("roles", [])
+                )
+
+
+                st.subheader("Relevant Experience")
+
+                render_bullets(
+                    experience.get("relevant_experience", [])
+                )
+
+
+                st.subheader("Achievements")
+
+                render_bullets(
+                    experience.get("achievements", [])
+                )
+
+
+            with col2:
+
+                st.subheader("Strengths")
+
+                render_bullets(
+                    experience.get("strengths", [])
+                )
+
+
+                st.subheader("Areas to Improve")
+
+                render_bullets(
+                    experience.get("weaknesses", [])
+                )
+
+
+            st.divider()
+
+
+            # ==================================================
             # Education Analysis
-            # ==========================================
+            # ==================================================
 
             st.header("🎓 Education Analysis")
-
-            education = result["education_analysis"]
 
             col1, col2 = st.columns(2)
 
@@ -226,159 +334,212 @@ if analyze_button:
 
                 st.subheader("Degrees")
 
-                st.write(
+                render_bullets(
                     education.get("degrees", [])
                 )
 
+
                 st.subheader("Fields of Study")
 
-                st.write(
+                render_bullets(
                     education.get("fields_of_study", [])
                 )
 
+
                 st.subheader("Certifications")
 
-                st.write(
+                render_bullets(
                     education.get("certifications", [])
                 )
+
 
             with col2:
 
                 st.subheader("Relevant Coursework")
 
-                st.write(
+                render_bullets(
                     education.get("relevant_coursework", [])
                 )
 
+
                 st.subheader("Strengths")
 
-                st.write(
+                render_bullets(
                     education.get("strengths", [])
                 )
 
+
                 st.subheader("Gaps")
 
-                st.write(
+                render_bullets(
                     education.get("gaps", [])
                 )
 
 
-            # ==========================================
+            st.divider()
+
+
+            # ==================================================
             # Job Match Analysis
-            # ==========================================
+            # ==================================================
 
             st.header("🎯 Job Match Analysis")
 
-            job_match = result["job_match_analysis"]
-
-            score = job_match.get("match_score", 0)
+            st.subheader("Match Score")
 
             st.metric(
-                label="Match Score",
-                value=f"{score}/100",
+                "Overall Match",
+                f"{score}/100"
             )
+
+            st.progress(score / 100)
+
 
             col1, col2 = st.columns(2)
 
             with col1:
 
-                st.subheader("Matching Skills")
+                st.subheader("✅ Matching Skills")
 
-                st.write(
+                render_bullets(
                     job_match.get("matching_skills", [])
                 )
 
+
             with col2:
 
-                st.subheader("Missing Skills")
+                st.subheader("⚠️ Missing Skills")
 
-                st.write(
+                render_bullets(
                     job_match.get("missing_skills", [])
                 )
 
+
             st.subheader("Relevant Experience")
 
-            st.write(
-                job_match.get("relevant_experience", [])
+            render_bullets(
+                job_match.get(
+                    "relevant_experience",
+                    []
+                )
             )
+
 
             st.subheader("Experience Gaps")
 
-            st.write(
-                job_match.get("experience_gaps", [])
+            render_bullets(
+                job_match.get(
+                    "experience_gaps",
+                    []
+                )
             )
+
 
             st.subheader("Education Match")
 
-            st.write(
-                job_match.get("education_match", "")
-            )
-
-            st.subheader("Strengths for Role")
-
-            st.write(
-                job_match.get("strengths_for_role", [])
-            )
-
-            st.subheader("Weaknesses for Role")
-
-            st.write(
-                job_match.get("weaknesses_for_role", [])
+            render_text(
+                job_match.get(
+                    "education_match",
+                    ""
+                )
             )
 
 
-            # ==========================================
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader("💪 Strengths for Role")
+
+                render_bullets(
+                    job_match.get(
+                        "strengths_for_role",
+                        []
+                    )
+                )
+
+
+            with col2:
+
+                st.subheader("⚠️ Weaknesses for Role")
+
+                render_bullets(
+                    job_match.get(
+                        "weaknesses_for_role",
+                        []
+                    )
+                )
+
+
+            st.divider()
+
+
+            # ==================================================
             # Recommendations
-            # ==========================================
+            # ==================================================
 
             st.header("📝 Recommendations")
 
-            recommendations = result["recommendations"]
+            with st.expander(
+                "🎯 Skills to Emphasize",
+                expanded=True
+            ):
 
-            st.subheader("Skills to Emphasize")
-
-            st.write(
-                recommendations.get(
-                    "skills_to_emphasize",
-                    []
+                render_bullets(
+                    recommendations.get(
+                        "skills_to_emphasize",
+                        []
+                    )
                 )
-            )
 
-            st.subheader("Experience Improvements")
 
-            st.write(
-                recommendations.get(
-                    "experience_improvements",
-                    []
+            with st.expander(
+                "💼 Experience Improvements"
+            ):
+
+                render_bullets(
+                    recommendations.get(
+                        "experience_improvements",
+                        []
+                    )
                 )
-            )
 
-            st.subheader("Resume Improvements")
 
-            st.write(
-                recommendations.get(
-                    "resume_improvements",
-                    []
+            with st.expander(
+                "📄 Resume Improvements"
+            ):
+
+                render_bullets(
+                    recommendations.get(
+                        "resume_improvements",
+                        []
+                    )
                 )
-            )
 
-            st.subheader("Keywords to Consider")
 
-            st.write(
-                recommendations.get(
-                    "keywords_to_consider",
-                    []
+            with st.expander(
+                "🔑 Keywords to Consider"
+            ):
+
+                render_bullets(
+                    recommendations.get(
+                        "keywords_to_consider",
+                        []
+                    )
                 )
-            )
 
-            st.subheader("Priority Actions")
 
-            st.write(
-                recommendations.get(
-                    "priority_actions",
-                    []
+            with st.expander(
+                "🚀 Priority Actions",
+                expanded=True
+            ):
+
+                render_numbered_items(
+                    recommendations.get(
+                        "priority_actions",
+                        []
+                    )
                 )
-            )
 
 
         except Exception as e:
@@ -386,4 +547,3 @@ if analyze_button:
             st.error(
                 f"An error occurred while analyzing the resume: {e}"
             )
-    
